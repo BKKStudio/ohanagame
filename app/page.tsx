@@ -7,7 +7,7 @@ import AddGang from "./components/AddGang";
 
 interface ManageModalType {
   event: string;
-  status: boolean;
+  status: Boolean;
   namePlayer: string;
   handleModal: () => void;
   handleNameChange: (value: string) => void;
@@ -16,7 +16,7 @@ interface ManageModalType {
 }
 
 interface ManageGangModalType {
-  status: boolean;
+  status: Boolean;
   allPlayers: PlayerType[];
   selectedPlayed: string;
   handleGangModal: () => void;
