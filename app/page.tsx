@@ -1,103 +1,451 @@
+"use client";
 import Image from "next/image";
+import AddPlayers from "./components/AddPlayers";
+import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
+import AddGang from "./components/AddGang";
+
+interface ManageModalType {
+  event: string;
+  status: boolean;
+  namePlayer: string;
+  handleModal: () => void;
+  handleNameChange: (value: string) => void;
+  addPlayer: (name: string) => void;
+  removePlayer: (id: number) => void;
+}
+
+interface ManageGangModalType {
+  status: boolean;
+  allPlayers: any;
+  selectedPlayed: string;
+  handleGangModal: () => void;
+  addGang: (name: string) => void;
+}
+
+interface PlayerType {
+  id: number;
+  name: string;
+}
+
+type CardType = {
+  id: number;
+  name: string;
+  line: string;
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  let count = 0;
+  const [manageModal, setManageModal] = useState<ManageModalType>({
+    event: "",
+    status: false,
+    namePlayer: "",
+    handleModal: () =>
+      setManageModal((prev) => ({ ...prev, status: !prev.status })),
+    handleNameChange: (name: string) =>
+      setManageModal((prev) => ({ ...prev, namePlayer: name })),
+    addPlayer: (name: string) => {
+      const newPlayer: PlayerType = {
+        id: allPlayers.length != 0 ? count++ : 0,
+        name,
+      };
+      setAllPlayers((prev) => [...prev, newPlayer]);
+      setManageModal((prev) => ({ ...prev, namePlayer: "" }));
+    },
+    removePlayer: (id: number) => {
+      console.log(id);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      setAllPlayers((prev) => prev.filter((player) => player.id !== id));
+    },
+  });
+  const deckTemplate: CardType[] = [];
+
+  let id = 1;
+
+  // เพิ่มไพ่พิเศษ: King, Queen, Jack (4 ใบต่อชื่อ)
+  ["King", "Queen", "Jack"].forEach((face) => {
+    for (let i = 0; i < 4; i++) {
+      deckTemplate.push({ id: id++, name: face, line: `${face}${i + 1}.png` });
+    }
+  });
+
+  // เพิ่มไพ่ A ถึง 3 (4 ใบต่อชื่อ)
+  ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10"].forEach((num) => {
+    for (let i = 0; i < 4; i++) {
+      deckTemplate.push({ id: id++, name: num, line: `${num}${i + 1}.png` });
+    }
+  });
+
+  const [allPlayers, setAllPlayers] = useState<PlayerType[]>([ ]);
+  const [currentPlayerIndex, setCurrentPlayerIndex] = useState<number>(0);
+
+  // ฟังก์ชันเปลี่ยนผู้เล่น (วนรอบ)
+  const goToNextPlayer = () => {
+    setCurrentPlayerIndex((prevIndex) => (prevIndex + 1) % allPlayers.length);
+  };
+
+  // หาค่า index ของผู้เล่นก่อนหน้า และผู้เล่นถัดไป
+  const prevPlayerIndex =
+    (currentPlayerIndex - 1 + allPlayers.length) % allPlayers.length;
+  const nextPlayerIndex = (currentPlayerIndex + 1) % allPlayers.length;
+
+  const [startGame, setStartGame] = useState<Boolean>(false);
+
+  //Start Card
+  const [deck, setDeck] = useState<CardType[]>([]);
+  const [playedCards, setPlayedCards] = useState<
+    { player: string; card: CardType }[]
+  >([]);
+  const [currentCard, setCurrentCard] = useState<CardType | null>(null);
+  const [kingHolder, setKingHolder] = useState<string | null>(null);
+  const [queenHolder, setQueenHolder] = useState<string | null>(null);
+  const [jackHolder, setJackHolder] = useState<string | null>(null);
+  const [gangOfDrinkers, setGangOfDrinkers] = useState<string[]>([]);
+  const [allPlayersForModal , setAllPlayersForModel] = useState<PlayerType[]>(allPlayers)
+  const [manageGangModal, setManageGangModal] = useState<ManageGangModalType>({
+    status: false,
+    allPlayers: allPlayersForModal.filter((player) => player.name != allPlayers[currentPlayerIndex].name),
+    selectedPlayed: "",
+    handleGangModal: () =>{
+      setManageGangModal((prev) => ({ ...prev, status: !prev.status }))
+      let filterdPlayer = allPlayers.filter((player) => player.name !=  allPlayers[currentPlayerIndex].name)
+      setAllPlayersForModel(filterdPlayer)
+      console.log(allPlayersForModal);
+      
+    },
+    addGang: (name) => {
+      if (gangOfDrinkers.length === 0) {
+        gangOfDrinkers.push(allPlayers[currentPlayerIndex].name);
+        gangOfDrinkers.push(name);
+      } else {
+        gangOfDrinkers.push(name);
+      }
+
+      // อัพเดต allPlayers หลังจากการเพิ่มสมาชิก
+      setManageGangModal((prev) => ({
+        ...prev,
+        allPlayers: allPlayers.filter(
+          (player) =>
+            !gangOfDrinkers.some((gangPlayer) => gangPlayer === player.name)
+        ),
+      }));
+
+      // ปิด modal หลังจากเพิ่มสมาชิก
+      setManageGangModal((prev) => ({ ...prev, status: false }));
+    }
+  });
+
+  useEffect(() => {
+    if (startGame) {
+      const shuffled = [...deckTemplate].sort(() => 0.5 - Math.random());
+      setDeck(shuffled);
+    }
+  }, [startGame]);
+
+  useEffect(() => {
+    if (!currentCard) return;
+
+    const currentPlayer = allPlayers[prevPlayerIndex];
+
+    switch (currentCard.name) {
+      case "Queen":
+        setQueenHolder(currentPlayer.name);
+        Swal.fire({
+          title: `Queen หรือ แหม่ม เพื่อนไม่ครบ`,
+          text: `ห้ามพูดกับ! ${currentPlayer.name} 😶`,
+          icon: "success",
+          confirmButtonText: "ตกลง",
+        });
+        break;
+      case "King":
+        setKingHolder(currentPlayer.name);
+        Swal.fire({
+          title: `King ยืนทำท่าต่างๆ`,
+          text: `${currentPlayer.name} ต้องเต้นจนกว่าจะมีคนได้ King อีกครั้ง! 💃`,
+          icon: "success",
+          confirmButtonText: "ตกลง",
+        });
+        break;
+      case "Jack":
+        setJackHolder(currentPlayer.name);
+        Swal.fire({
+          title: `Jack จับหน้า`,
+          text: `${currentPlayer.name} ต้องจับหน้า! ใครช้าโดนลงโทษ! 😆`,
+          icon: "success",
+          confirmButtonText: "ตกลง",
+        });
+        break;
+      case "A":
+        Swal.fire({
+          title: `A ดื่มคนเดียว 🥴`,
+          text: `ดื่มเหล้าคนเดียว เฮ้อไม่สนุกเลย 😑`,
+          icon: "success",
+          confirmButtonText: "ตกลง",
+        });
+        break;
+      case "2":
+        Swal.fire({
+          title: `Duo หาเพื่อนดื่มด้วย`,
+          text: `หาเพื่อนดื่มด้วย 1 คน ใครก็ได้ในวง`,
+          icon: "success",
+          confirmButtonText: "ตกลง",
+        });
+        break;
+      case "3":
+        Swal.fire({
+          title: `Triple หาเพื่อนดื่มด้วย 2 คน`,
+          text: `หาเพื่อนดื่มด้วย 2 คน ใครก็ได้ในวง`,
+          icon: "success",
+          confirmButtonText: "ตกลง",
+        });
+        break;
+      case "4":
+        Swal.fire({
+          title: `4 เพื่อนฝั่งซ้ายโดน`,
+          text: `เพื่อนฝั่งซ้ายดื่มเหล้าหมดแก้ว`,
+          icon: "success",
+          confirmButtonText: "ตกลง",
+        });
+        break;
+      case "5":
+        Swal.fire({
+          title: `5 เฮฮา`,
+          text: `หมดแก้วรอบวง`,
+          icon: "success",
+          confirmButtonText: "ตกลง",
+        });
+        break;
+      case "6":
+        Swal.fire({
+          title: `6 เพื่อนฝั่งขวาโดน`,
+          text: `เพื่อนฝั่งขวาดื่มเหล้าหมดแก้`,
+          icon: "success",
+          confirmButtonText: "ตกลง",
+        });
+        break;
+      case "7":
+        let filterdPlayer = allPlayers.filter((player) => player.name != currentPlayer.name )
+        setAllPlayersForModel(filterdPlayer)
+        manageGangModal.handleGangModal();
+        break;
+      case "8":
+        Swal.fire({
+          title: `8 พักผ่อนตามอัธยาศัย`,
+          text: `ผู้เล่นพักผ่อนได้`,
+          icon: "success",
+          confirmButtonText: "ตกลง",
+        });
+        break;
+      case "9":
+        Swal.fire({
+          title: `9 มินิเกมส์`,
+          text: `สุ่มเกมส์ให้เล่น`,
+          icon: "success",
+          confirmButtonText: "ตกลง",
+        });
+        break;
+      case "10":
+        Swal.fire({
+          title: `10 ทาแป้ง`,
+          text: `ผู้เล่นที่จับได้จะต้องทาแป้งง`,
+          icon: "success",
+          confirmButtonText: "ตกลง",
+        });
+        break;
+      default:
+        break;
+    }
+  }, [currentCard]);
+
+  const handleNextCard = () => {
+    if (deck.length === 0) {
+      alert("ไพ่หมดแล้ว!");
+      return;
+    }
+    const nextCard = deck[0];
+    const newDeck = deck.slice(1);
+    const player = allPlayers[currentPlayerIndex].name;
+
+    setPlayedCards([...playedCards, { player, card: nextCard }]);
+    setCurrentCard(nextCard);
+    setDeck(newDeck);
+    goToNextPlayer();
+  };
+
+  const restartGame = () => {
+    setCurrentCard(null);
+    setKingHolder(null);
+    setJackHolder(null);
+    setQueenHolder(null);
+    setDeck([]);
+    setPlayedCards([]);
+    const shuffled = [...deckTemplate].sort(() => 0.5 - Math.random());
+    setDeck(shuffled);
+    alert("Restart เกมส์เรียบร้อย");
+  };
+
+  if (startGame) {
+    return (
+      <div>
+        <AddGang manageGangModalprops={{ ...manageGangModal }} />
+        <div className="w-full h-screen flex justify-center items-center ">
+          <main className="w-full h-screen flex justify-center items-center ">
+            <div className="w-full max-w-6xl px-2 h-full  flex flex-col items-center gap-4 max-sm:gap-2">
+              <div className="max-w-3xl w-full  bg-gray-800 h-24 items-center rounded-lg mt-4 grid grid-rows-2">
+                <div className="grid grid-cols-3 text-center text-3xl">
+                  <span className="font-bold">King</span>
+                  <span className=" font-bold">Queen</span>
+                  <span className=" font-bold">Jack</span>
+                </div>
+                <div className="grid grid-cols-3 text-center font-light text-3xl">
+                  <span className="text-xl font-bold">
+                    {!kingHolder ? "-" : kingHolder}
+                  </span>
+                  <span className="text-xl font-bold">
+                    {!queenHolder ? "-" : queenHolder}
+                  </span>
+                  <span className="text-xl font-bold">
+                    {!jackHolder ? "-" : jackHolder}
+                  </span>
+                </div>
+              </div>
+              <div className="max-w-3xl w-full bg-gray-800 p-4 h-max rounded-lg ">
+                <div className="grid grid-cols-3  text-center text-3xl max-lg:text-base">
+                  <span className="">ผู้เล่นก่อนหน้า</span>
+                  <span className="text-green-400 font-bold">
+                    ผู้เล่นปัจจุบัน
+                  </span>
+                  <span>ผู้เล่นต่อไป</span>
+                </div>
+                <div className="grid grid-cols-3 justify-center items-center w-full  text-center text-3xl">
+                  <span className=" font-light">
+                    {allPlayers[prevPlayerIndex].name}
+                  </span>
+                  <span className="text-green-400 font-bold">
+                    {allPlayers[currentPlayerIndex].name}
+                  </span>
+                  <span className=" font-light">
+                    {allPlayers[nextPlayerIndex].name}
+                  </span>
+                </div>
+              </div>
+              <div className="max-w-3xl w-full bg-gray-800 grid grid-cols-2 max-sm:grid-cols-1  gap-4 p-4 rounded-lg  ">
+                <div className="grid gap-3 ">
+                  <div className="w-full bg-gray-600 h-[250px] p-3">
+                    <p className="text-xl font-bold text-center">
+                      แกงค์นักดื่ม
+                    </p>
+                    <ul className="list-disc ml-4">
+                      {gangOfDrinkers.map((player, idx) => (
+                        <li key={idx}>{player}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="text-white  bg-gray-600 w-full h-[250px] max-sm:h-36 overflow-y-auto  p-3 ">
+                    <p className="text-xl font-bold text-center">ประวัติไพ่</p>
+                    <ul className="list-disc ml-4">
+                      {playedCards.map((entry, idx) => (
+                        <li key={idx}>
+                          {entry.player} ได้ไพ่ {entry.card.name}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 justify-center items-center">
+                  <div className="w-full grid  gap-4">
+                    <button
+                      onClick={handleNextCard}
+                      className="cursor-pointer text-white text-xl bg-blue-600 hover:bg-blue-700 p-2 rounded-lg"
+                    >
+                      Next Card
+                    </button>
+                  </div>
+                  <div className="bg-white w-72 max-sm:w-2/4 h-full rounded-lg flex flex-col items-center justify-center text-black text-2xl font-bold">
+                    {currentCard ? (
+                      <img
+                        src={`/Cards/${currentCard.line}`}
+                        alt=""
+                        className="rounded-lg "
+                      ></img>
+                    ) : (
+                      <img
+                        src="/None/None.png"
+                        alt=""
+                        className="rounded-lg"
+                      ></img>
+                    )}
+                  </div>
+                  <div className="text-white text-xl mt-4">
+                    ไพ่ที่เหลือ: {deck.length} ใบ
+                  </div>
+                </div>
+              </div>
+              <div className="max-w-3xl w-full bg-gray-800   gap-4 p-4 rounded-lg  ">
+                <button
+                  className="w-full text-center bg-green-500 p-2 rounded-lg font-bold cursor-pointer"
+                  onClick={restartGame}
+                >
+                  Restart Game
+                </button>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <AddPlayers manageModalprops={{ ...manageModal }} />
+      <main className="w-full h-screen flex justify-center items-center ">
+        <div className="w-full max-w-6xl  flex flex-col gap-4">
+          <p className="text-center text-6xl">สมาชิกในเกมส์</p>
+          <div className="w-full flex justify-center">
+            <div className="w-96 h-96 bg-gray-900 rounded-2xl">
+              <ul className="flex flex-col p-3 gap-2 overflow-y-auto">
+                {allPlayers.map((player) => (
+                  <li
+                    key={player.id}
+                    className="w-full bg-gray-500 flex justify-between p-2 rounded-lg "
+                  >
+                    {player.name}
+                    <div className="grid gap-2 cursor-pointer">
+                      <button
+                        className="bg-red-500 rounded-lg p-1 cursor-pointer"
+                        onClick={() => manageModal.removePlayer(player.id)}
+                      >
+                        ลบ
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <div className="w-full flex justify-center">
+            <div className="w-96 h-12 gap-2  grid grid-cols-2 ">
+              <button
+                className="bg-amber-400 rounded-2xl font-bold"
+                onClick={manageModal.handleModal}
+              >
+                เพิ่มสมาชิก
+              </button>
+              <button
+                className={`${
+                  allPlayers.length !== 0 ? "bg-green-500" : "bg-gray-500"
+                }  rounded-2xl font-bold cursor-pointer`}
+                onClick={() => setStartGame(true)}
+                disabled={allPlayers.length === 0 ? true : false}
+              >
+                เริ่มเกม
+              </button>
+            </div>
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
