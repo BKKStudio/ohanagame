@@ -7,7 +7,7 @@ import AddGang from "./components/AddGang";
 
 interface ManageModalType {
   event: string;
-  status: Boolean;
+  status: boolean;
   namePlayer: string;
   handleModal: () => void;
   handleNameChange: (value: string) => void;
@@ -16,7 +16,7 @@ interface ManageModalType {
 }
 
 interface ManageGangModalType {
-  status: Boolean;
+  status: boolean;
   allPlayers: PlayerType[];
   selectedPlayed: string;
   handleGangModal: () => void;
@@ -89,7 +89,7 @@ export default function Home() {
     (currentPlayerIndex - 1 + allPlayers.length) % allPlayers.length;
   const nextPlayerIndex = (currentPlayerIndex + 1) % allPlayers.length;
 
-  const [startGame, setStartGame] = useState<Boolean>(false);
+  const [startGame, setStartGame] = useState<boolean>(false);
 
   //Start Card
   const [deck, setDeck] = useState<CardType[]>([]);
@@ -100,7 +100,7 @@ export default function Home() {
   const [kingHolder, setKingHolder] = useState<string | null>(null);
   const [queenHolder, setQueenHolder] = useState<string | null>(null);
   const [jackHolder, setJackHolder] = useState<string | null>(null);
-  const [gangOfDrinkers, setGangOfDrinkers] = useState<string[]>([]);
+  const [gangOfDrinkers] = useState<string[]>([]);
   const [allPlayersForModal , setAllPlayersForModel] = useState<PlayerType[]>(allPlayers)
   const [manageGangModal, setManageGangModal] = useState<ManageGangModalType>({
     status: false,
