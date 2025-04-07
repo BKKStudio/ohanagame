@@ -108,7 +108,7 @@ export default function Home() {
     selectedPlayed: "",
     handleGangModal: () =>{
       setManageGangModal((prev) => ({ ...prev, status: !prev.status }))
-      let filterdPlayer = allPlayers.filter((player) => player.name !=  allPlayers[currentPlayerIndex].name)
+      const filterdPlayer = allPlayers.filter((player) => player.name !=  allPlayers[currentPlayerIndex].name)
       setAllPlayersForModel(filterdPlayer)
       console.log(allPlayersForModal);
       
@@ -224,7 +224,7 @@ export default function Home() {
         });
         break;
       case "7":
-        let filterdPlayer = allPlayers.filter((player) => player.name != currentPlayer.name )
+        const  filterdPlayer = allPlayers.filter((player) => player.name != currentPlayer.name )
         setAllPlayersForModel(filterdPlayer)
         manageGangModal.handleGangModal();
         break;
