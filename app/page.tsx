@@ -17,7 +17,7 @@ interface ManageModalType {
 
 interface ManageGangModalType {
   status: boolean;
-  allPlayers: any;
+  allPlayers: PlayerType[];
   selectedPlayed: string;
   handleGangModal: () => void;
   addGang: (name: string) => void;

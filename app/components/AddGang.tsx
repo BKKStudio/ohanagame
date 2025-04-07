@@ -1,8 +1,11 @@
 import React from "react";
-
+interface PlayerType {
+  id: number;
+  name: string;
+}
 interface ManageGangModalType {
   status: boolean;
-  allPlayers: any;
+  allPlayers:PlayerType[];
   selectedPlayed: string;
   handleGangModal: () => void;
   addGang: (name: string) => void;
