@@ -32,7 +32,7 @@ export default function AddGang({
           <ul className="flex flex-wrap gap-3 ml-4">
             {manageGangModalprops.allPlayers.length !== 0 ? (
               manageGangModalprops.allPlayers.map(
-                (player: any, idx: number) => (
+                (player:PlayerType , idx: number) => (
                   <li
                     key={idx}
                     className="py-2 px-4 rounded-lg bg-red-700 cursor-pointer"
