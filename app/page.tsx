@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import AddPlayers from "./components/AddPlayers";
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
@@ -363,11 +364,13 @@ export default function Home() {
                   </div>
                   <div className="bg-white w-72 max-sm:w-2/4 h-full rounded-lg flex flex-col items-center justify-center text-black text-2xl font-bold">
                     {currentCard ? (
-                      <img
+                      <Image
                         src={`/Cards/${currentCard.line}`}
                         alt=""
                         className="rounded-lg "
-                      ></img>
+                        width={285}
+                        height={285}
+                      ></Image>
                     ) : (
                       <img
                         src="/None/None.png"
